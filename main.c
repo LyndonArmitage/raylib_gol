@@ -3,16 +3,19 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+#include "gifenc.h"
+#include <string.h>
 
 #define WIDTH 800
 #define HEIGHT 600
+#define WRITE_GIF 0
 
 bool **new_grid(int width, int height);
 void delete_grid(bool **grid);
 void randomise_grid(bool **grid, int width, int height);
 
 void init_grid();
-void update(int width, int height);
+void update(int width, int height, ge_GIF * gif, uint16_t delay);
 
 int count_neighbours(int x, int y, bool **grid, int width, int height);
 bool test_live_cell(int count);
@@ -20,8 +23,9 @@ bool test_dead_cell(int count);
 
 void draw();
 void draw_grid(bool **grid, int width, int height);
+void draw_gif_frame(ge_GIF *gif, int width, int height, uint16_t delay);
 
-bool paused = false;
+bool paused = true;
 bool **live_grid = NULL;
 bool **swap_grid = NULL;
 
@@ -33,13 +37,25 @@ int main(int argc, char** args) {
 
   SetTargetFPS(30);
 
+  uint8_t palette[] = {
+    0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0xFF
+  };
+  ge_GIF* gif = NULL;
+  if(WRITE_GIF) gif = ge_new_gif("test.gif", WIDTH, HEIGHT, palette, 1, 1);
+  uint16_t delay = 30 /100;
+
   while(!WindowShouldClose()) {
-    update(WIDTH, HEIGHT);
+    update(WIDTH, HEIGHT, gif, delay);
     draw();
   }
 
   delete_grid(live_grid);
   delete_grid(swap_grid);
+
+  if(gif != NULL) {
+    ge_close_gif(gif);
+  }
 
   return 0;
 }
@@ -55,7 +71,7 @@ void init_grid() {
   swap_grid = new_grid(WIDTH, HEIGHT);
 }
 
-void update(int width, int height) {
+void update(int width, int height, ge_GIF * gif, uint16_t delay) {
   
   if(IsKeyPressed(KEY_R)) {
     randomise_grid(live_grid, width, height);
@@ -86,6 +102,8 @@ void update(int width, int height) {
 
     swap_grid = grid;
     live_grid = copy;
+
+    draw_gif_frame(gif, width, height, delay);
   }
 }
 
@@ -185,4 +203,21 @@ void draw_grid(bool **grid, int width, int height) {
       }
     }
   }
+}
+
+void draw_gif_frame(ge_GIF *gif, int width, int height, uint16_t delay) {
+  if(gif == NULL) return;
+  uint8_t pixels[width * height];
+  for(int x = 0; x < width; x ++){
+    for(int y = 0; y < height; y ++) {
+      int pos = (y * width) + x;
+      if(live_grid[x][y]) {
+        pixels[pos] = 1;
+      } else {
+        pixels[pos] = 0;
+      }
+    }
+  }
+  memcpy(gif->frame, pixels, sizeof(pixels));
+  ge_add_frame(gif, delay);
 }
