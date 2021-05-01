@@ -39,7 +39,17 @@ void draw();
 void draw_grid(bool **grid, int width, int height);
 void draw_gif_frame(ge_GIF *gif, int width, int height, uint16_t delay);
 
-char rulestring[] = "B3/S23";
+// Conways Game of Life
+//char rulestring[] = "B3/S23";
+// EightLife
+//char rulestring[] = "B3/S238";
+// HighLife
+//char rulestring[] = "B36/S23";
+// pedestrian Life
+//char rulestring[] = "B38/S23";
+// Day & Night
+char rulestring[] = "B3678/S34678";
+
 bool paused = true;
 bool **live_grid = NULL;
 bool **swap_grid = NULL;
@@ -219,7 +229,7 @@ parsed_rulestring parse_rulestring(char *rulestring) {
     char first = token[0];
 
     if(first == 'B' || first == 'S') {
-      int * numbers = malloc(sizeof(int) * 8);
+      int * numbers = malloc(sizeof(int) * 9);
       int number_index = 0;
       if(numbers == NULL) {
         fprintf(stderr, "Could not allocate array");
